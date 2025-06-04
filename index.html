@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Shock</title>
+    <style>
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #3498db 0%, #6dd5fa 100%);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+        transition: background 0.3s ease, color 0.3s ease;
+      }
+
+      #theme-toggle {
+        position: fixed;
+        top: 15px;
+        right: 15px;
+        padding: 8px 14px;
+        font-size: 14px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        background-color: #2980b9;
+        color: white;
+        box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
+        transition: background-color 0.3s ease;
+        z-index: 1000;
+      }
+
+      #theme-toggle:hover {
+        background-color: #1c5980;
+      }
+
+      .container {
+        width: 420px;
+        background: #ffffff;
+        padding: 30px 25px;
+        border-radius: 16px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+        text-align: center;
+        transition: background-color 0.3s ease, box-shadow 0.3s ease;
+      }
+
+      #question-text {
+        font-size: 22px;
+        font-weight: 700;
+        margin-bottom: 25px;
+        color: #333;
+        padding: 14px 20px;
+        background-color: #e3f2fd;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(33, 150, 243, 0.15);
+        user-select: none;
+        transition: background-color 0.3s ease, color 0.3s ease;
+      }
+
+      .btn-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        margin-top: 15px;
+      }
+
+      button {
+        padding: 12px;
+        font-size: 16px;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        background-color: #3498db;
+        color: white;
+        transition: background-color 0.3s ease, transform 0.1s ease;
+      }
+
+      button:hover {
+        background-color: #2980b9;
+        transform: scale(1.02);
+      }
+
+      button:disabled {
+        background-color: #bdc3c7;
+        cursor: not-allowed;
+      }
+
+      .correct,
+      .correct:hover {
+        background-color: #2ecc71 !important;
+      }
+
+      .wrong,
+      .wrong:hover {
+        background-color: #e74c3c !important;
+      }
+
+      .answer-btn:last-of-type {
+        margin-bottom: 10px;
+      }
+
+      #question-number {
+        margin-bottom: 15px;
+        font-size: 16px;
+        color: #666;
+        font-weight: 500;
+        transition: color 0.3s ease;
+      }
+
+      #result-box {
+        margin-top: 20px;
+        font-size: 20px;
+        font-weight: bold;
+        color: #2c3e50;
+        padding: 12px;
+        background-color: #dfefff;
+        border-radius: 10px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        transition: background-color 0.3s ease, color 0.3s ease;
+      }
+
+      .hide {
+        display: none;
+      }
+
+      body.dark {
+        background: linear-gradient(135deg, #181818 0%, #0c0c0c 100%);
+        color: #ddd;
+      }
+
+      body.dark .container {
+        background: #1c1c1c;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.7);
+      }
+
+      body.dark #question-text {
+        background-color: #353535;
+        color: #f0f0f0;
+        box-shadow: 0 5px 1px rgba(70, 130, 180, 0.5);
+      }
+
+      body.dark #question-number {
+        color: #bbb;
+      }
+
+      body.dark #result-box {
+        background-color: #3a3a3a;
+        color: #eee;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+      }
+
+      body.dark button {
+        background-color: #1b4f72;
+      }
+
+      body.dark button:hover {
+        background-color: #1c5980;
+      }
+
+      body.dark button:disabled {
+        background-color: #555;
+      }
+
+      body.dark .correct,
+      body.dark .correct:hover {
+        background-color: #27ae60;
+      }
+
+      body.dark .wrong,
+      body.dark .wrong:hover {
+        background-color: #c0392b;
+      }
+    </style>
+  </head>
+  <body>
+    <button id="theme-toggle">Dark mode</button>
+
+    <div class="container">
+      <h2 id="quiz-title">Shock</h2>
+
+      <div id="start-box">
+        <button id="start-btn">Start</button>
+      </div>
+
+      <div id="quiz-box" class="hide">
+        <div id="question-number"></div>
+        <div id="question-text"></div>
+        <div id="answer-buttons" class="btn-grid"></div>
+        <button id="next-btn" disabled>Next</button>
+      </div>
+
+      <div id="result-box" class="hide">
+        <h3>Your Score</h3>
+        <p id="score-text"></p>
+        <button id="try-again-btn">Try Again</button>
+      </div>
+    </div>
+
+    <script>
+      const allQuestions = [
+        // Book Questions
+        {
+          question:
+            "IV fluids are administered to clients has a shock state because of....",
+          options: [
+            "The clients are thirsty",
+            "Blood volume is too low and needs to be raised",
+            "Blood volume is too high and needs to be lowered",
+            "To flush the bacteria from the bloodstream",
+          ],
+          correctIndex: 1,
+        },
+        {
+          question:
+            "The mainstay of therapy for virtually all forms of shock is:",
+          options: [
+            "Intravenous fluids.",
+            "Epinephrine.",
+            "Norepinephrine.",
+            "Red blood cells.",
+          ],
+          correctIndex: 0,
+        },
+        {
+          question:
+            "Which of the following is the first-line treatment for anaphylactic shock?",
+          options: [
+            "Diphenhydramine",
+            "Epinephrine",
+            "Hydrocortisone",
+            "Norepinephrine",
+          ],
+          correctIndex: 1,
+        },
+        {
+          question:
+            "Which of the following causes of circulatory insufficiency can lead to shock due to decrease in plasma volume?",
+          options: [
+            "Penetrating trauma with blood loss.",
+            "Gastrointestinal bleeding.",
+            "Anaphylaxis because of medications.",
+            "All are true.",
+          ],
+          correctIndex: 3,
+        },
+        {
+          question:
+            "A patient who is in hypovolemic shock has the following clinical signs: Heart rate 120 beats/minute, blood pressure 80/55 mmHg, and urine output 20ml/hr. After administering an IV fluid bolus, which of these signs if noted by the healthcare provider is the best indication of improved perfusion?",
+          options: [
+            "The heart rate drops to 100 beats/minute.",
+            "Right atrial pressure increases.",
+            "Urine output increases to 30mL/hour.",
+            "Systolic blood pressure increases to 85 mmHg.",
+          ],
+          correctIndex: 2,
+        },
+        {
+          question:
+            "Which of the following is the most common cause of distributive shock?",
+          options: [
+            "Hypovolemia",
+            "Myocardial infarction",
+            "Sepsis",
+            "Pulmonary embolism",
+          ],
+          correctIndex: 2,
+        },
+        {
+          question:
+            "Which of the following is a hallmark feature of neurogenic shock from others?",
+          options: [
+            "Tachycardia",
+            "Bradycardia",
+            "Hypertension",
+            "Hypotension",
+          ],
+          correctIndex: 1,
+        },
+        {
+          question:
+            "Stages of severe or refractory shock require loss of blood volume above:",
+          options: ["20%", "30%", "40%", "50%"],
+          correctIndex: 2,
+        },
+        {
+          question:
+            "Which of the following is the most appropriate initial fluid for resuscitation in hypovolemic shock?",
+          options: [
+            "Packed red blood cells",
+            "Normal saline (0.9% NaCl)",
+            "5% dextrose in water",
+            "Albumin",
+          ],
+          correctIndex: 1,
+        },
+        {
+          question:
+            "Which of the following is a key feature of hypovolemic shock?",
+          options: [
+            "Increased preload",
+            "Decreased systemic vascular resistance",
+            "Decreased cardiac output",
+            "Bradycardia",
+          ],
+          correctIndex: 2,
+        },
+        {
+          question:
+            "Which of the following is the most appropriate vasopressor for septic shock?",
+          options: ["Epinephrine", "Norepinephrine", "Dopamine", "Vasopressin"],
+          correctIndex: 1,
+        },
+        {
+          question:
+            "A patient with shock and a history of a recent long bone fracture is most likely experiencing which type of shock?",
+          options: [
+            "Cardiogenic shock",
+            "Hypovolemic shock",
+            "Distributive shock",
+            "Obstructive shock",
+          ],
+          correctIndex: 1,
+        },
+        // Questions
+        {
+          question: "What is the primary definition of shock?",
+          options: [
+            "High blood pressure",
+            "Tissue hypoperfusion",
+            "Excessive urine output",
+            "Hyperactivity of the nervous system",
+          ],
+          correctIndex: 1,
+        },
+        {
+          question:
+            "Which of the following is NOT a factor affecting cardiac output?",
+          options: [
+            "Preload",
+            "Myocardial contractility",
+            "Afterload",
+            "Blood glucose level",
+          ],
+          correctIndex: 3,
+        },
+        {
+          question: "What is the first sign of shock in most cases?",
+          options: [
+            "Bradycardia",
+            "Tachycardia",
+            "Hypertension",
+            "Hypothermia",
+          ],
+          correctIndex: 1,
+        },
+        {
+          question:
+            "Which compensatory mechanism occurs in shock to retain sodium and water?",
+          options: [
+            "Increased urine output",
+            "Vasodilation",
+            "Release of catecholamines",
+            "Decreased heart rate",
+          ],
+          correctIndex: 2,
+        },
+        {
+          question:
+            "What is a key diagnostic sign of shock related to skin perfusion?",
+          options: [
+            "Warm extremities",
+            "Cold extremities",
+            "Excessive sweating",
+            "Flushed skin",
+          ],
+          correctIndex: 1,
+        },
+        {
+          question:
+            "Which type of shock is caused by a severe systemic infection?",
+          options: ["Hypovolemic", "Cardiogenic", "Septic", "Neurogenic"],
+          correctIndex: 2,
+        },
+        {
+          question:
+            "In hypovolemic shock, what is the volume loss percentage for Class II?",
+          options: ["Up to 15%", "15-30%", "30-40%", ">40%"],
+          correctIndex: 1,
+        },
+        {
+          question: "Which position is recommended for managing shock?",
+          options: ["Supine", "Trendelenburg", "Prone", "Lateral"],
+          correctIndex: 1,
+        },
+        {
+          question: "Which of the following is a symptom of septic shock?",
+          options: ["Hypothermia", "Bradycardia", "Hypotension", "Bradyapnea"],
+          correctIndex: 2,
+        },
+        {
+          question: "What is the primary issue in distributive shock?",
+          options: [
+            "Increased peripheral vascular resistance",
+            "Decreased peripheral vascular resistance",
+            "Problems with the heart's pumping ability",
+            "Excessive blood loss",
+          ],
+          correctIndex: 1,
+        },
+        {
+          question:
+            "Which medication is preferred for septic shock with systolic BP 70 - 90 mmHg?",
+          options: ["Dopamine", "Norepinephrine", "Dobutamine", "Epinephrine"],
+          correctIndex: 0,
+        },
+        {
+          question: "What is the primary cause of obstructive shock?",
+          options: [
+            "Blood loss",
+            "Pump failure",
+            "Obstruction to blood flow",
+            "Allergic reaction",
+          ],
+          correctIndex: 2,
+        },
+        {
+          question: "Which of the following is a symptom of neurogenic shock?",
+          options: ["Warm skin", "Tachycardia", "Hypertension", "Fever"],
+          correctIndex: 0,
+        },
+        {
+          question:
+            "What is the mortality rate of cardiogenic shock even with treatment?",
+          options: ["10% or more", "30% or more", "50% or more", "40% or more"],
+          correctIndex: 2,
+        },
+        {
+          question:
+            "Which of the following is NOT a cause of obstructive shock?",
+          options: [
+            "Pulmonary embolism",
+            "Tension pneumothorax",
+            "Cardiac tamponade",
+            "Severe diarrhea",
+          ],
+          correctIndex: 3,
+        },
+        {
+          question:
+            "What is the primary goal of nursing care in shock management?",
+          options: [
+            "Reduce fluid intake",
+            "Maintain fluid volume at a functional level",
+            "Increase urine output artificially",
+            "Lower blood pressure",
+          ],
+          correctIndex: 1,
+        },
+        {
+          question:
+            "Which of the following is a sign of cardiovascular overload during fluid administration?",
+          options: [
+            "Hypotension",
+            "Jugular vein distention",
+            "Cold extremities",
+            "Bradycardia",
+          ],
+          correctIndex: 1,
+        },
+        {
+          question: "What is the preferred site for IV access in adults?",
+          options: [
+            "Femoral vein",
+            "Forearm veins",
+            "Jugular vein",
+            "Saphenous vein",
+          ],
+          correctIndex: 1,
+        },
+        {
+          question: "Which of the following is a late sign of septic shock?",
+          options: [
+            "Warm, flushed skin",
+            "Cold, clammy skin",
+            "Elevated lactic acid levels",
+            "Hypotension",
+          ],
+          correctIndex: 1,
+        },
+        {
+          question: "What is the first step in managing shock?",
+          options: [
+            "Administer antibiotics",
+            "Ensure a patent airway",
+            "Insert a urinary catheter",
+            "Elevate the legs",
+          ],
+          correctIndex: 1,
+        },
+        {
+          question:
+            "Which of the following is a symptom of anaphylactic shock?",
+          options: [
+            "Increased blood pressure",
+            "Wheezing",
+            "Slow pulse",
+            "Dry skin",
+          ],
+          correctIndex: 1,
+        },
+        {
+          question: "What is the primary treatment for cardiogenic shock?",
+          options: [
+            "Fluid restriction",
+            "Revascularization",
+            "Antihistamines",
+            "Fluid resuscitation",
+          ],
+          correctIndex: 1,
+        },
+        {
+          question:
+            "Which of the following is a key diagnostic tool for pulmonary embolism?",
+          options: ["Chest X-ray", "CT scan", "Echocardiogram", "ECG"],
+          correctIndex: 1,
+        },
+        {
+          question:
+            "Which of the following is a key diagnostic tool for pericardial effusion?",
+          options: ["Chest X-ray", "CT scan", "Echocardiogram", "ECG"],
+          correctIndex: 2,
+        },
+        {
+          question: "What is the primary cause of hypovolemic shock?",
+          options: [
+            "Heart failure",
+            "Severe bleeding",
+            "Allergic reaction",
+            "Spinal cord injury",
+          ],
+          correctIndex: 1,
+        },
+        {
+          question:
+            "Which of the following is a symptom of Class IV hypovolemic shock?",
+          options: [
+            "Pulse < 100 bpm",
+            "Anuria",
+            "normal blood pressure",
+            "Bradycardia",
+          ],
+          correctIndex: 1,
+        },
+        {
+          question: "What is the primary goal of oxygen therapy in shock?",
+          options: [
+            "Reduce heart rate",
+            "Maintain O2 saturation >95%",
+            "Lower blood pressure",
+            "Increase urine output",
+          ],
+          correctIndex: 1,
+        },
+        {
+          question: "What is the primary cause of distributive shock?",
+          options: [
+            "Blood loss",
+            "Widespread vasodilation",
+            "Pump failure",
+            "Obstruction",
+          ],
+          correctIndex: 1,
+        },
+        {
+          question: "Which of the following is a symptom of cardiac tamponade?",
+          options: [
+            "Hypotension",
+            "Hypertension",
+            "Bradycardia",
+            "Warm extremities",
+          ],
+          correctIndex: 0,
+        },
+        {
+          question: "What is the primary treatment for tension pneumothorax?",
+          options: [
+            "Antibiotics",
+            "Needle decompression",
+            "Fluid restriction",
+            "Antihistamines",
+          ],
+          correctIndex: 1,
+        },
+        {
+          question: "Which of the following is a key diagnostic sign of shock?",
+          options: [
+            "Increased urine output",
+            "Change in level of consciousness",
+            "Hypertension",
+            "Bradycardia",
+          ],
+          correctIndex: 1,
+        },
+        {
+          question: "What is the primary cause of cardiogenic shock?",
+          options: [
+            "Severe bleeding",
+            "Heart attack",
+            "Allergic reaction",
+            "Infection",
+          ],
+          correctIndex: 1,
+        },
+        {
+          question:
+            "Which of the following is a preventive measure for anaphylactic shock?",
+          options: [
+            "Avoid known allergens",
+            "Increase fluid intake",
+            "Exercise regularly",
+            "Don't carry on epinephrine auto-injector",
+          ],
+          correctIndex: 0,
+        },
+        {
+          question:
+            "Corticosteroids and antihistamines are used in anaphylactic shock to:",
+          options: [
+            "Reduce inflammation and prevent delayed reactions",
+            "If the patient remains hypotensive",
+            "Relax airway smooth muscles",
+            "Reduce swelling",
+          ],
+          correctIndex: 0,
+        },
+        {
+          question:
+            "If patient still hypotensive, ... infusion can be started.",
+          options: [
+            "Antihistamine",
+            "O2 with aminophylline",
+            "Dopamine",
+            "Epinephrine",
+          ],
+          correctIndex: 2,
+        },
+        {
+          question:
+            "In anaphylactic shock, epinephrine is administered via ______ when systolic blood pressure is below 80 mmHg.",
+          options: ["IM in thigh", "IV", "SC", "All are true"],
+          correctIndex: 1,
+        },
+        {
+          question:
+            "In anaphylactic shock, if symptoms improve after epinephrine injection, you do not need to call for emergency medical help.",
+          options: ["True", "False"],
+          correctIndex: 1,
+        },
+        {
+          question:
+            "In hypovolemic, cardiogenic, and obstructive shocks the peripheral vascular resistance is increased.",
+          options: ["True", "False"],
+          correctIndex: 0,
+        },
+        {
+          question:
+            "In distributive shock and subtypes the peripheral vascular resistance is decreased.",
+          options: ["True", "False"],
+          correctIndex: 0,
+        },
+        {
+          question: "Shock is defined as tissue hyperperfusion.",
+          options: ["True", "False"],
+          correctIndex: 1,
+        },
+        {
+          question: "Tachycardia is the first sign of shock in most cases.",
+          options: ["True", "False"],
+          correctIndex: 0,
+        },
+        {
+          question: "Hypovolemic shock is caused by excessive fluid intake.",
+          options: ["True", "False"],
+          correctIndex: 1,
+        },
+        {
+          question:
+            "Septic shock is the most common form of distributive shock.",
+          options: ["True", "False"],
+          correctIndex: 0,
+        },
+        {
+          question:
+            "Epinephrine is the first-line treatment for anaphylactic shock.",
+          options: ["True", "False"],
+          correctIndex: 0,
+        },
+        {
+          question: "Neurogenic shock is characterized by tachycardia.",
+          options: ["True", "False"],
+          correctIndex: 1,
+        },
+        {
+          question:
+            "Cardiogenic shock has a low mortality rate with treatment.",
+          options: ["True", "False"],
+          correctIndex: 1,
+        },
+        {
+          question: "Obstructive shock is caused by blood loss.",
+          options: ["True", "False"],
+          correctIndex: 1,
+        },
+        {
+          question:
+            "The Trendelenburg position is recommended for shock management.",
+          options: ["True", "False"],
+          correctIndex: 0,
+        },
+        {
+          question: "Cold, clammy skin is a early sign of septic shock.",
+          options: ["True", "False"],
+          correctIndex: 1,
+        },
+        {
+          question:
+            "Dopamine is the preferred vasopressor for systolic BP < 70 mmHg.",
+          options: ["True", "False"],
+          correctIndex: 1,
+        },
+        {
+          question: "Anaphylactic shock can be triggered by peanuts.",
+          options: ["True", "False"],
+          correctIndex: 0,
+        },
+        {
+          question: "Hypovolemic shock Class I involves a volume loss of >40%.",
+          options: ["True", "False"],
+          correctIndex: 1,
+        },
+        {
+          question: "ARDS is a complication of untreated hypovolemic shock.",
+          options: ["True", "False"],
+          correctIndex: 0,
+        },
+        {
+          question:
+            "Normal saline is the preferred IV fluid for initial shock therapy.",
+          options: ["True", "False"],
+          correctIndex: 0,
+        },
+        {
+          question: "Pulmonary embolism is a cause of obstructive shock.",
+          options: ["True", "False"],
+          correctIndex: 0,
+        },
+        {
+          question:
+            "Antibiotics are the primary treatment for cardiogenic shock.",
+          options: ["True", "False"],
+          correctIndex: 1,
+        },
+        {
+          question:
+            "A change in level of consciousness is a key diagnostic sign of shock.",
+          options: ["True", "False"],
+          correctIndex: 0,
+        },
+        {
+          question:
+            "Avoiding known allergens is a preventive measure for hypovolemic shock.",
+          options: ["True", "False"],
+          correctIndex: 1,
+        },
+      ];
+
+      let currentQuestionIndex = 0;
+      let score = 0;
+
+      const startBtn = document.getElementById("start-btn");
+      const nextBtn = document.getElementById("next-btn");
+      const tryAgainBtn = document.getElementById("try-again-btn");
+      const quizBox = document.getElementById("quiz-box");
+      const startBox = document.getElementById("start-box");
+      const questionNumberElement = document.getElementById("question-number");
+      const questionText = document.getElementById("question-text");
+      const answerButtons = document.getElementById("answer-buttons");
+      const resultBox = document.getElementById("result-box");
+      const scoreText = document.getElementById("score-text");
+      const themeToggleBtn = document.getElementById("theme-toggle");
+
+      function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [array[i], array[j]] = [array[j], array[i]];
+        }
+      }
+
+      function isTrueFalseQuestion(questionObj) {
+        const opts = questionObj.options;
+        return (
+          opts.length === 2 && opts.includes("True") && opts.includes("False")
+        );
+      }
+
+      function startQuiz() {
+        currentQuestionIndex = 0;
+        score = 0;
+        shuffleArray(allQuestions);
+        startBox.classList.add("hide");
+        resultBox.classList.add("hide");
+        quizBox.classList.remove("hide");
+        setNextQuestion();
+      }
+
+      function setNextQuestion() {
+        resetState();
+        if (currentQuestionIndex < allQuestions.length) {
+          showQuestion(allQuestions[currentQuestionIndex]);
+        } else {
+          showResult();
+        }
+      }
+
+      function showQuestion(questionObj) {
+        questionNumberElement.textContent = `Question ${
+          currentQuestionIndex + 1
+        } of ${allQuestions.length}`;
+        questionText.textContent = questionObj.question;
+
+        const optionsWithFlag = questionObj.options.map((opt, i) => ({
+          text: opt,
+          isCorrect: i === questionObj.correctIndex,
+        }));
+
+        // if (!isTrueFalseQuestion(questionObj)) {
+        //   shuffleArray(optionsWithFlag);
+        // }
+
+        if (!isTrueFalseQuestion(questionObj)) {
+          // تعريف العبارات التي نريد تثبيتها في نهاية القائمة
+          const fixedOptions = [
+            "All of the above",
+            "All are true",
+            "All are false",
+            "All are correct",
+            "None of the above",
+          ];
+
+          // نحاول العثور على واحدة من هذه العبارات
+          const fixedOptionIndex = optionsWithFlag.findIndex((option) =>
+            fixedOptions.includes(option.text.trim())
+          );
+
+          if (fixedOptionIndex !== -1) {
+            // استخراج الخيار الثابت من القائمة
+            const fixedOption = optionsWithFlag.splice(fixedOptionIndex, 1)[0];
+
+            // خلط باقي الخيارات
+            shuffleArray(optionsWithFlag);
+
+            // إعادة إضافة الخيار الثابت في النهاية
+            optionsWithFlag.push(fixedOption);
+          } else {
+            // لا يوجد خيار ثابت، خلط طبيعي
+            shuffleArray(optionsWithFlag);
+          }
+        }
+
+        optionsWithFlag.forEach((option) => {
+          const button = document.createElement("button");
+          button.textContent = option.text;
+          button.classList.add("answer-btn");
+          button.addEventListener("click", () =>
+            selectAnswer(button, option.isCorrect)
+          );
+          answerButtons.appendChild(button);
+        });
+      }
+
+      function resetState() {
+        nextBtn.disabled = true;
+        answerButtons.innerHTML = "";
+      }
+
+      function selectAnswer(button, isCorrect) {
+        const buttons = answerButtons.querySelectorAll("button");
+        buttons.forEach((btn) => (btn.disabled = true));
+
+        if (isCorrect) {
+          button.classList.add("correct");
+          score++;
+        } else {
+          button.classList.add("wrong");
+          buttons.forEach((btn) => {
+            if (
+              btn.textContent ===
+              allQuestions[currentQuestionIndex].options[
+                allQuestions[currentQuestionIndex].correctIndex
+              ]
+            ) {
+              btn.classList.add("correct");
+            }
+          });
+        }
+
+        nextBtn.disabled = false;
+      }
+
+      function showResult() {
+        quizBox.classList.add("hide");
+        resultBox.classList.remove("hide");
+        scoreText.textContent = `${score} out of ${allQuestions.length}`;
+      }
+
+      // Theme toggle
+      themeToggleBtn.addEventListener("click", () => {
+        document.body.classList.toggle("dark");
+        themeToggleBtn.textContent = document.body.classList.contains("dark")
+          ? "Light mode"
+          : "Dark mode";
+      });
+
+      // Event listeners
+      startBtn.addEventListener("click", startQuiz);
+      nextBtn.addEventListener("click", () => {
+        currentQuestionIndex++;
+        setNextQuestion();
+      });
+      tryAgainBtn.addEventListener("click", startQuiz);
+    </script>
+  </body>
+</html>
